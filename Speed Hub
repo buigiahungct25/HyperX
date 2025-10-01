@@ -1,0 +1,239 @@
+-- Ultimate Weapon Pro Neon (Clone Speed Hub 100%)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
+local player = Players.LocalPlayer
+
+-- ===== GUI =====
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "UltimateWeaponProNeon"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game.CoreGui
+
+-- Main Frame
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 300, 0, 450)
+Frame.Position = UDim2.new(0.5, -150, 0.5, -225)
+Frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+Frame.BorderSizePixel = 0
+Frame.Visible = true
+Frame.Parent = ScreenGui
+
+-- Neon stroke
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Color = Color3.fromRGB(0,255,255)
+UIStroke.Thickness = 2
+UIStroke.Parent = Frame
+
+-- Minimize button
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Size = UDim2.new(0,40,0,30)
+minimizeButton.Position = UDim2.new(1,-45,0,5)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(0,100,255)
+minimizeButton.TextColor3 = Color3.fromRGB(255,255,255)
+minimizeButton.Text = "-"
+minimizeButton.Font = Enum.Font.GothamBold
+minimizeButton.TextSize = 24
+minimizeButton.Parent = Frame
+
+-- Logo button when minimized
+local logoButton = Instance.new("TextButton")
+logoButton.Size = UDim2.new(0,100,0,40)
+logoButton.Position = UDim2.new(0,10,0.5,-20)
+logoButton.BackgroundColor3 = Color3.fromRGB(0,255,255)
+logoButton.TextColor3 = Color3.fromRGB(0,0,0)
+logoButton.Text = "UW"
+logoButton.Font = Enum.Font.GothamBold
+logoButton.TextSize = 20
+logoButton.Visible = false
+logoButton.Parent = ScreenGui
+
+-- Minimize / Restore Tween
+minimizeButton.MouseButton1Click:Connect(function()
+    TweenService:Create(Frame, TweenInfo.new(0.3), {Size = UDim2.new(0,0,0,0)}):Play()
+    wait(0.3)
+    Frame.Visible = false
+    logoButton.Visible = true
+end)
+logoButton.MouseButton1Click:Connect(function()
+    Frame.Visible = true
+    TweenService:Create(Frame, TweenInfo.new(0.3), {Size = UDim2.new(0,300,0,450)}):Play()
+    logoButton.Visible = false
+end)
+
+-- Drag menu
+local dragging = false
+local dragInput, mousePos, framePos
+Frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        mousePos = input.Position
+        framePos = Frame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+Frame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+RunService.RenderStepped:Connect(function()
+    if dragging and dragInput then
+        local delta = dragInput.Position - mousePos
+        Frame.Position = framePos + UDim2.new(0, delta.X, 0, delta.Y)
+    end
+end)
+
+-- ===== Button Creation =====
+local buttonCount = 0
+local function createButton(name, callback)
+    buttonCount = buttonCount + 1
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0,280,0,40)
+    button.Position = UDim2.new(0,10,0,60 + (buttonCount-1)*50)
+    button.BackgroundColor3 = Color3.fromRGB(15,15,15)
+    button.TextColor3 = Color3.fromRGB(0,255,255)
+    button.Text = name
+    button.Font = Enum.Font.GothamBold
+    button.TextSize = 16
+    button.Parent = Frame
+
+    local uiStroke = Instance.new("UIStroke")
+    uiStroke.Color = Color3.fromRGB(0,255,255)
+    uiStroke.Thickness = 2
+    uiStroke.Parent = button
+
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0,50,255)}):Play()
+    end)
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(15,15,15)}):Play()
+    end)
+
+    button.MouseButton1Click:Connect(callback)
+end
+
+-- ===== Features cloned from Speed Hub =====
+-- Fix Lag
+createButton("Fix Lag", function()
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Explosion") then
+            v:Destroy()
+        elseif v:IsA("Light") or v:IsA("Smoke") then
+            v.Enabled = false
+        end
+    end
+    settings().Rendering.QualityLevel = 1
+end)
+
+-- Speed Hack
+createButton("Speed Hack", function()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid then humanoid.WalkSpeed = 100 end
+end)
+
+-- Jump Hack
+createButton("Jump Hack", function()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid then humanoid.JumpPower = 150 end
+end)
+
+-- Fly
+local flying = false
+local bodyVelocity, bodyGyro
+createButton("Fly", function()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    flying = not flying
+    if flying then
+        bodyVelocity = Instance.new("BodyVelocity", root)
+        bodyVelocity.MaxForce = Vector3.new(400000,400000,400000)
+        bodyVelocity.Velocity = Vector3.new(0,0,0)
+        bodyGyro = Instance.new("BodyGyro", root)
+        bodyGyro.D = 10
+        bodyGyro.P = 3000
+        bodyGyro.MaxTorque = Vector3.new(400000,400000,400000)
+    else
+        if bodyVelocity then bodyVelocity:Destroy() end
+        if bodyGyro then bodyGyro:Destroy() end
+    end
+end)
+
+-- Noclip
+local noclipActive = false
+createButton("Noclip", function()
+    noclipActive = not noclipActive
+end)
+RunService.RenderStepped:Connect(function()
+    if noclipActive then
+        local character = player.Character
+        if character then
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end
+end)
+
+-- God Mode
+local godMode = false
+createButton("God Mode", function()
+    godMode = not godMode
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.MaxHealth = godMode and math.huge or 100
+        humanoid.Health = humanoid.MaxHealth
+    end
+end)
+RunService.RenderStepped:Connect(function()
+    if godMode then
+        local character = player.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then humanoid.Health = humanoid.MaxHealth end
+        end
+    end
+end)
+
+-- Clear Effects
+createButton("Clear Effects", function()
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Light") then
+            v:Destroy()
+        end
+    end
+end)
+
+-- AutoFarm / AutoKill
+local autoFarm = false
+createButton("AutoFarm", function()
+    autoFarm = not autoFarm
+end)
+spawn(function()
+    while true do
+        wait(0.1)
+        if autoFarm then
+            for _, mob in pairs(Workspace:GetDescendants()) do
+                if mob:IsA("Model") and mob:FindFirstChild("Humanoid") and mob ~= player.Character then
+                    local root = mob:FindFirstChild("HumanoidRootPart")
+                    local playerRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                    if root and playerRoot then
+                        playerRoot.CFrame = root.CFrame + Vector3.new(0,3,0)
+                        mob.Humanoid.Health = 0
+                    end
+                end
+            end
+        end
+    end
+end)
