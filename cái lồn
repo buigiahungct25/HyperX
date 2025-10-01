@@ -1,0 +1,190 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+
+-- GUI chính
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "UltimateWeaponProNeon"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game.CoreGui
+
+-- Frame menu
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 350, 0, 450)
+Frame.Position = UDim2.new(0.5, -175, 0.5, -225)
+Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Frame.BorderSizePixel = 0
+Frame.BackgroundTransparency = 0.1
+Frame.Visible = true
+Frame.Parent = ScreenGui
+
+-- Neon stroke
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Color = Color3.fromRGB(0, 255, 255)
+UIStroke.Thickness = 2
+UIStroke.Parent = Frame
+
+-- Minimize button
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Size = UDim2.new(0, 40, 0, 30)
+minimizeButton.Position = UDim2.new(1, -45, 0, 5)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
+minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeButton.Text = "-"
+minimizeButton.Font = Enum.Font.GothamBold
+minimizeButton.TextSize = 24
+minimizeButton.Parent = Frame
+
+-- Logo HyperX khi menu bị ẩn
+local logoButton = Instance.new("ImageButton")
+logoButton.Size = UDim2.new(0, 100, 0, 40)
+logoButton.Position = UDim2.new(0, 10, 0.5, -20)
+logoButton.BackgroundTransparency = 1
+logoButton.Image = "rbxassetid://13857360350" -- Thay bằng ID riêng nếu muốn
+logoButton.Visible = false
+logoButton.Parent = ScreenGui
+
+-- Minimize/Restore
+minimizeButton.MouseButton1Click:Connect(function()
+    Frame.Visible = false
+    logoButton.Visible = true
+end)
+
+logoButton.MouseButton1Click:Connect(function()
+    Frame.Visible = true
+    logoButton.Visible = false
+end)
+
+-- Drag menu
+local function makeDraggable(frame)
+    local dragging = false
+    local dragInput, mousePos, framePos
+
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            mousePos = input.Position
+            framePos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+
+    RunService.RenderStepped:Connect(function()
+        if dragging and dragInput then
+            local delta = dragInput.Position - mousePos
+            frame.Position = framePos + UDim2.new(0, delta.X, 0, delta.Y)
+        end
+    end)
+end
+
+makeDraggable(Frame)
+makeDraggable(logoButton) -- Kéo thả logo HyperX
+
+-- Tạo button neon
+local function createButton(name, callback)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, 330, 0, 40)
+    button.Position = UDim2.new(0, 10, 0, (#Frame:GetChildren()-4)*50 + 60)
+    button.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+    button.TextColor3 = Color3.fromRGB(0, 255, 255)
+    button.Text = name
+    button.Font = Enum.Font.GothamBold
+    button.TextSize = 16
+    button.Parent = Frame
+
+    local uiStroke = Instance.new("UIStroke")
+    uiStroke.Color = Color3.fromRGB(0, 255, 255)
+    uiStroke.Thickness = 2
+    uiStroke.Parent = button
+
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 50, 255)}):Play()
+    end)
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(10, 10, 10)}):Play()
+    end)
+
+    button.MouseButton1Click:Connect(callback)
+end
+
+-- ==== Manual Features ====
+createButton("Fix Lag", function()
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Explosion") then
+            v:Destroy()
+        elseif v:IsA("Light") or v:IsA("Smoke") then
+            v.Enabled = false
+        end
+    end
+    settings().Rendering.QualityLevel = 1
+end)
+
+createButton("Speed Hack", function()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid then humanoid.WalkSpeed = 100 end
+end)
+
+createButton("Jump Hack", function()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid then humanoid.JumpPower = 150 end
+end)
+
+local flying = false
+local bodyVelocity
+createButton("Fly", function()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    flying = not flying
+    if flying then
+        bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.Velocity = Vector3.new(0,0,0)
+        bodyVelocity.MaxForce = Vector3.new(1e5,1e5,1e5)
+        bodyVelocity.Parent = root
+    else
+        if bodyVelocity then bodyVelocity:Destroy() end
+    end
+end)
+
+local noclipActive = false
+createButton("Noclip", function()
+    noclipActive = not noclipActive
+    local character = player.Character or player.CharacterAdded:Wait()
+    for _, part in pairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = not noclipActive
+        end
+    end
+end)
+
+local godMode = false
+createButton("God Mode", function()
+    godMode = not godMode
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.MaxHealth = godMode and math.huge or 100
+        humanoid.Health = humanoid.MaxHealth
+    end
+end)
+
+createButton("Clear Effects", function()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Light") then
+            v:Destroy()
+        end
+    end
+end)
