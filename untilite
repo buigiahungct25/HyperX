@@ -1,0 +1,129 @@
+-- Script Fix Lag + Menu Kéo Thả
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
+local Player = Players.LocalPlayer
+
+-- ---------- CÀI ĐẶT MẶC ĐỊNH ----------
+local Settings = {
+    FPSCap = true,
+    Shadows = false,
+    Particles = false
+}
+
+-- ---------- FIX LAG MẶC ĐỊNH ----------
+local function applySettings()
+    if Settings.FPSCap and setfpscap then
+        setfpscap(60)
+    end
+    Lighting.GlobalShadows = Settings.Shadows
+    Lighting.FogEnd = 100000
+    Lighting.Brightness = 1
+
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Explosion") then
+            if not Settings.Particles then
+                v:Destroy()
+            end
+        elseif v:IsA("Texture") then
+            v:Remove()
+        end
+    end
+end
+
+applySettings()
+
+-- ---------- GUI ----------
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "FixLagMenu"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = Player:WaitForChild("PlayerGui")
+
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 220, 0, 150)
+Frame.Position = UDim2.new(0.5, -110, 0.5, -75)
+Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Frame.Visible = false
+Frame.Parent = ScreenGui
+
+local Label = Instance.new("TextLabel")
+Label.Size = UDim2.new(1, 0, 0, 25)
+Label.Position = UDim2.new(0, 0, 0, 5)
+Label.Text = "Fix Lag Menu (M để đóng)"
+Label.TextColor3 = Color3.new(1,1,1)
+Label.BackgroundTransparency = 1
+Label.Parent = Frame
+
+-- Hàm tạo nút
+local function createButton(name, yPos, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 200, 0, 30)
+    btn.Position = UDim2.new(0, 10, 0, yPos)
+    btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Text = name
+    btn.Parent = Frame
+    btn.MouseButton1Click:Connect(callback)
+end
+
+createButton("Bật/Tắt FPS Cap", 40, function()
+    Settings.FPSCap = not Settings.FPSCap
+    applySettings()
+end)
+
+createButton("Bật/Tắt Shadows", 75, function()
+    Settings.Shadows = not Settings.Shadows
+    applySettings()
+end)
+
+createButton("Bật/Tắt Particles", 110, function()
+    Settings.Particles = not Settings.Particles
+    applySettings()
+end)
+
+-- ---------- MỞ/ĐÓNG MENU ----------
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.M then
+        Frame.Visible = not Frame.Visible
+    end
+end)
+
+-- ---------- KÉO THẢ MENU ----------
+local dragging = false
+local dragInput, dragStart, startPos
+
+Frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = Frame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+Frame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        Frame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+print("Script Fix Lag + Menu kéo thả đã kích hoạt! Nhấn M để mở menu.")
