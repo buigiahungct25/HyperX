@@ -1,0 +1,139 @@
+-- GiHung Hub | Ultra Lite - 1 Toggle (~50 FPS)
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "GiHungHubUI"
+screenGui.Parent = playerGui
+
+-- Main Frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0,150,0,50)
+frame.Position = UDim2.new(0.05,0,0.05,0)
+frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+-- Header
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1,0,0,20)
+header.BackgroundTransparency = 1
+header.Parent = frame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,-28,1,0)
+title.Position = UDim2.new(0,5,0,0)
+title.BackgroundTransparency = 1
+title.Text = "GiHung Hub"
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Font = Enum.Font.GothamSemibold
+title.TextSize = 12
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Parent = header
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0,20,0,14)
+closeBtn.Position = UDim2.new(1,-22,0,3)
+closeBtn.Text = "X"
+closeBtn.Font = Enum.Font.Gotham
+closeBtn.TextSize = 12
+closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
+closeBtn.BackgroundColor3 = Color3.fromRGB(180,50,50)
+closeBtn.Parent = header
+
+closeBtn.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+end)
+
+-- Content
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1,-4,1,-20)
+content.Position = UDim2.new(0,2,0,20)
+content.BackgroundTransparency = 1
+content.Parent = frame
+
+-- Single toggle
+local btn = Instance.new("TextButton")
+btn.Size = UDim2.new(1,0,0,20)
+btn.Position = UDim2.new(0,0,0,0)
+btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+btn.TextColor3 = Color3.fromRGB(255,255,255)
+btn.Font = Enum.Font.Gotham
+btn.TextSize = 12
+btn.Text = "Ultra Optimize: OFF"
+btn.Parent = content
+
+local toggle = false
+btn.MouseButton1Click:Connect(function()
+    toggle = not toggle
+    btn.Text = toggle and "Ultra Optimize: ON" or "Ultra Optimize: OFF"
+end)
+
+-- Drag logic
+local dragging = false
+local dragInput, dragStart, startPos
+local function updateInput(input)
+    local delta = input.Position - dragStart
+    frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+header.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input == dragInput then
+        updateInput(input)
+    end
+end)
+
+-- Ultra FPS Optimization
+local function OptimizeObject(obj)
+    if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") then
+        obj.Enabled = false
+    elseif obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("UnionOperation") then
+        obj.CastShadow = false
+        obj.Material = Enum.Material.Plastic
+        obj.Reflectance = 0
+    elseif obj:IsA("Decal") or obj:IsA("Texture") then
+        obj.Transparency = 1
+    elseif obj:IsA("Terrain") then
+        obj.WaterWaveSize = 0
+        obj.WaterReflectance = 0
+        obj.WaterTransparency = 0.5
+    end
+end
+
+for _, obj in pairs(Workspace:GetDescendants()) do
+    OptimizeObject(obj)
+end
+
+Workspace.DescendantAdded:Connect(function(obj)
+    OptimizeObject(obj)
+end)
+
+-- Lighting optimization
+Lighting.GlobalShadows = false
+Lighting.FogEnd = 100000
+Lighting.Brightness = 1
